@@ -2,19 +2,17 @@
  * User-tunable settings.
  */
 const CONFIG = {
-  // How often the background trigger checks scheduled drafts. Must be one of
-  // 1, 5, 10, 15, 30. Sends can be up to this many minutes late.
-  CHECK_INTERVAL_MINUTES: 5,
+  // How often to check scheduled emails for replies. Must be one of
+  // 1, 5, 10, 15, 30. A reply that lands within this window before the send
+  // time can lose the race, so keep it small.
+  CHECK_INTERVAL_MINUTES: 1,
 
-  // Labels applied to the thread so you can see state from Gmail itself.
-  SCHEDULED_LABEL: 'Schedule Guard/Scheduled',
-  CANCELLED_LABEL: 'Schedule Guard/Cancelled',
+  // Label put on the reply that caused a scheduled email to be unscheduled.
+  UNSCHEDULED_LABEL: 'Schedule Guard/Unscheduled',
 
-  // If true, a message *you* send in the thread (from Gmail directly, not via
-  // this script) also cancels the scheduled send.
+  // If true, a message *you* send in the thread also unschedules the email.
   CANCEL_ON_OWN_MESSAGES: false,
 
-  // What to do to the thread when a scheduled send is cancelled by a reply.
-  MARK_UNREAD_ON_CANCEL: true,
-  MOVE_TO_INBOX_ON_CANCEL: true,
+  // Also mark the reply unread and make sure it's in the inbox.
+  SURFACE_REPLY: true,
 };

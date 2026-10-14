@@ -1,68 +1,69 @@
 # gmail-schedule-guard
 
-Gmail "schedule send" with one twist: **if anyone replies to the thread before
-your scheduled time, the send is cancelled and the email stays a draft** so you
-can decide what to do.
+Use Gmail's normal **Schedule send**. If anyone replies to the thread before
+your scheduled reply goes out, this script turns it back into a draft so you can
+decide what to do.
+
+There's no new UI. You only notice it when it acts.
 
 ## How it works
 
-Gmail's built-in Schedule send has no API, so a script can't cancel it. Instead:
+Gmail has no API for scheduled send. But a scheduled email is a draft with a
+send time attached. **Moving it to the trash and immediately restoring it
+removes the send time and leaves a normal draft in the same thread.** That's the
+same result as clicking "Cancel send" in Gmail.
 
-1. You write a normal draft (usually a reply in a thread).
-2. In the **Schedule Guard** sidebar in Gmail, you pick a send time. The script
-   records the draft, its thread, and the messages already in that thread, and
-   labels the thread `Schedule Guard/Scheduled`.
-3. A trigger runs every 5 minutes (configurable). For each scheduled draft:
-   - **Someone else posted a new message in the thread** → stop tracking it,
-     swap the label to `Schedule Guard/Cancelled`, move the thread to the inbox,
-     and mark it unread. The draft is untouched.
-   - **The send time has passed** → send the draft (whatever it says at that point,
-     so editing after you schedule is fine).
-   - **The draft is gone** (deleted or sent by hand) → stop tracking it.
+Every minute the script:
 
-Sends can be up to `CHECK_INTERVAL_MINUTES` late. Settings are in
-[`src/Config.js`](src/Config.js).
+1. Lists your scheduled emails (`in:scheduled`).
+2. The first time it sees one, records the messages already in that thread.
+3. If a new message from someone else has arrived in the thread since then, it
+   trashes and restores the scheduled email, so it's a draft again. The reply
+   gets the `Schedule Guard/Unscheduled` label, is marked unread, and is put
+   in your inbox.
+4. Forgets emails that are no longer scheduled, because they were sent or you
+   cancelled them.
+
+Settings are in [`src/Config.js`](src/Config.js).
 
 ## Setup
 
-You need Node and a Google account with the
-[Apps Script API turned on](https://script.google.com/home/usersettings).
+You need Node and the
+[Apps Script API turned on](https://script.google.com/home/usersettings) for
+your Google account.
 
 ```sh
 npm install
 npx clasp login
 npx clasp create --type standalone --title "Schedule Guard" --rootDir src
-#   (this writes .clasp.json; or copy .clasp.json.example and fill in scriptId)
 npx clasp push
 npx clasp open-script
 ```
 
-In the Apps Script editor:
+In the Apps Script editor, pick **`setup`** from the function dropdown and
+click **Run**. Approve the permissions. This installs the every-minute trigger
+and creates the label. That's it.
 
-1. **Run `setup`** (pick it in the function dropdown and click Run). Approve the
-   permissions. This installs the 5-minute trigger and creates the labels.
-2. **Deploy → Test deployments → Install** (Application: Gmail). Reload Gmail;
-   the Schedule Guard icon appears in the right sidebar.
+To check on it, run **`status`** to log what's scheduled and whether each one
+is being tracked. **Executions** in the editor, or `npm run logs`, shows each
+run.
 
-Run `setup` from the editor, not the add-on: Google limits triggers created by
-add-ons to once an hour.
+## Things to know
 
-## Using it
+- **Race window:** a reply that arrives less than a minute before the send
+  time can lose the race, and your email still goes out.
+- **The one-minute gap after scheduling:** the baseline is taken the first
+  time the script sees a scheduled email, up to a minute after you schedule
+  it. A reply that lands in that minute is treated as already seen.
+- **Your own messages:** messages you send in the thread yourself don't
+  unschedule anything unless you set `CANCEL_ON_OWN_MESSAGES`.
+- **New emails** (not replies) can't get a reply before they're sent, so
+  they're tracked but never unscheduled.
+- **Run time:** an every-minute trigger uses roughly 30–40 minutes of Apps
+  Script run time a day. That's well within the limit on a Workspace account
+  (6 hours a day). Free Gmail accounts get 90 minutes a day, so set
+  `CHECK_INTERVAL_MINUTES` to 5 there.
 
-- **Reply in a thread:** write your reply and close the compose box so it saves
-  as a draft. Open the Schedule Guard sidebar on that thread and press
-  **Refresh** if needed. Click **Schedule**, then pick a quick option or a
-  custom date and time.
-- **A new email:** save it as a draft, open the sidebar from the Gmail home
-  view, and schedule it from the **Drafts** list.
-- **To cancel**, click **Unschedule**. The draft stays as it is.
-- **To see what's queued,** look at the sidebar home view or the
-  `Schedule Guard/Scheduled` label.
+## Tests
 
-## Limitations
-
-- Only messages from other people cancel a send. Set `CANCEL_ON_OWN_MESSAGES`
-  to also cancel when you post in the thread yourself.
-- Don't use Gmail's own Schedule send on the same draft. A draft scheduled that
-  way leaves your Drafts folder, so the script stops tracking it.
-- Logs: `npx clasp logs`, or **Executions** in the Apps Script editor.
+`npm test` runs the logic against a fake Gmail (`test/guard.test.js`).

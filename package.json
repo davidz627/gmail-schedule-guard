@@ -1,9 +1,9 @@
 {
   "name": "gmail-schedule-guard",
   "private": true,
-  "description": "Gmail schedule send that turns back into a draft if someone replies first.",
+  "description": "Unschedule a Gmail scheduled reply back to a draft if someone replies first.",
   "scripts": {
-    "login": "clasp login",
+    "test": "node --test",
     "push": "clasp push",
     "open": "clasp open-script",
     "logs": "clasp logs"

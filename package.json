@@ -1,6 +1,7 @@
 {
   "name": "gmail-schedule-guard",
   "private": true,
+  "license": "MIT",
   "description": "Unschedule a Gmail scheduled reply back to a draft if someone replies first.",
   "scripts": {
     "test": "node --test",

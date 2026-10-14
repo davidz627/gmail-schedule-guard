@@ -1,0 +1,14 @@
+{
+  "name": "gmail-schedule-guard",
+  "private": true,
+  "description": "Gmail schedule send that turns back into a draft if someone replies first.",
+  "scripts": {
+    "login": "clasp login",
+    "push": "clasp push",
+    "open": "clasp open-script",
+    "logs": "clasp logs"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}
